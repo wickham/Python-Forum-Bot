@@ -110,26 +110,34 @@ async def on_message(message):
             guild = client.get_guild(GUILDID)
             # print(guild.get_member(int(discord_id)))
             if guild.get_member(int(discord_id)):
-                if "member" in [
-                    y.name.lower() for y in (guild.get_member(int(discord_id)).roles)
-                ]:
-                    messageDM = "THIS DINGUS IS ALREADY APPROVED???!!!"
-                    embed = discord.Embed(title=messageDM)
-                    user = get(client.get_all_members(), id=int(discord_id))
-                    print(user)
-                    if user:
-                        await user.send(embed=embed)
-                        # found the user
-                    else:
-                        # Not found the user
-                        print("User is no longer in the discord!")
-                else:
-                    print(guild.get_member(int(discord_id)).roles)
-                    # They need approval or denial (the river in Egypt)
-                    print("MOVING TO NEXT CHANNEL AND APPLYING REACTS")
+                # if "member" in [
+                #     y.name.lower() for y in (guild.get_member(int(discord_id)).roles)
+                # ]:
+                #     title = "DINGUS, YOURE ALREADY APPROVED!\n"
+                #     msg = "Visit: [#👋・welcome](https://discord.gg/9VdHkjc5Vv)"
+                #     messageDM = "DINGUS, YOURE ALREADY APPROVED!\nVisit: [#👋・welcome](https://discord.gg/9VdHkjc5Vv)"
+                #     embed = discord.Embed(title=title, description=msg).set_author(
+                #         name="ChronoRP", icon_url="https://i.imgur.com/knLQPpi.png"
+                #     )
+                #     user = get(client.get_all_members(), id=int(discord_id))
+
+                #     if user:
+                #         await user.send(embed=embed)
+                #         await message.delete()
+                #         # found the user
+                #     else:
+                #         # Not found the user
+                #         print("User is no longer in the discord!")
+                # else:
+                print(guild.get_member(int(discord_id)).roles)
+                # They need approval or denial (the river in Egypt)
+                print("APPLYING REACTS")
+                yes = "<:yes:965728109200552036>"
+                no = "<:no:965728137122050068>"
+                await message.add_reaction(yes)
+                await message.add_reaction(no)
             else:
                 print("BIG OL DUMMY LEFT THE DISCORD!! DM THAT PERSON!")
-        await message.delete()
 
 
 @client.command()
@@ -162,6 +170,23 @@ async def on_memeber_remove(member):
 #         await ctx.send("Left the channel")
 #     else:
 #         await ctx.send("Not in a voice channel.")
+@client.event
+async def on_reaction_add(reaction, user):
+    embed = reaction.embeds[0]
+    emoji = reaction.emoji
+
+    if user.client:
+        return
+
+    if emoji == "<:yes:965728109200552036>":
+        pending_apps = client.get_channel(CHANNELID)
+        await pending_apps.send(embed=embed)
+    elif emoji == "<:no:965728137122050068>":
+        # move the document
+        print("NO")
+        # give client member role
+    else:
+        return
 
 
 @client.command(pass_context=True)
