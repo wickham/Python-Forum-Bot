@@ -1,6 +1,7 @@
-from dis import disco
-from mimetypes import init
+#!/usr/bin/env python3
+from termios import PENDIN
 import discord
+import emoji
 from discord.ext import commands
 from discord.utils import get
 from discord import Member
@@ -56,7 +57,7 @@ async def on_message(message):
         elif "lastmessage" in msg_content:
             """Get the last message of a text channel."""
             print("REQUEST")
-            channel = client.get_channel(CHANNELID)
+            channel = client.get_channel(PENDINGID)
             if channel is None:
                 await message.channel.send("Could not find that channel.")
                 return
@@ -76,7 +77,7 @@ async def on_message(message):
         await message.author.send(f"{msg_content}    yourself!")
         # time.sleep(5)
         await message.delete()
-    elif CHANNELID == message.channel.id:
+    elif PENDINGID == message.channel.id:
         # Grab our last message content and replicate
         content = {}
         print(message.embeds)
@@ -132,10 +133,16 @@ async def on_message(message):
                 print(guild.get_member(int(discord_id)).roles)
                 # They need approval or denial (the river in Egypt)
                 print("APPLYING REACTS")
-                yes = "<:yes:965728109200552036>"
-                no = "<:no:965728137122050068>"
-                await message.add_reaction(yes)
-                await message.add_reaction(no)
+
+                yes = '✅'
+                no = await guild.fetch_emoji(1029677911848005632)
+                pin = await guild.fetch_emoji(1029677940801278003)
+
+                moji_list = [yes, no, pin]
+                for item in moji_list:
+                    await message.add_reaction(f"{item}")
+                # await message.add_reaction("<:white_check_mark:824906654385963018>")
+                # await message.add_reaction(emoji.emojize(":xmark:"))
             else:
                 print("BIG OL DUMMY LEFT THE DISCORD!! DM THAT PERSON!")
 
@@ -149,7 +156,7 @@ async def DM(ctx, user: discord.User, *, message=None):
 
 @client.event
 async def on_memeber_remove(member):
-    channel = client.get_channel(CHANNELID)
+    channel = client.get_channel(PENDINGID)
     print(f"user joined! {member}")
     await channel.send("You left? What a loser!")
 
@@ -172,19 +179,69 @@ async def on_memeber_remove(member):
 #         await ctx.send("Not in a voice channel.")
 @client.event
 async def on_reaction_add(reaction, user):
-    embed = reaction.embeds[0]
-    emoji = reaction.emoji
+    embed = reaction.message.embeds[0]
+    emoj = reaction.emoji
+    guild = client.get_guild(GUILDID)
+    yes = '✅'
+    no = await guild.fetch_emoji(1029677911848005632)
+    pin = await guild.fetch_emoji(1029677940801278003)
 
-    if user.client:
+    if user == client.user:
         return
+    if emoj == yes:
+        print("YES")
+        # APPROVE
+        print(reaction.message.content)
+        print(embed.description)
+        channel = client.get_channel(APPROVEDID)
 
-    if emoji == "<:yes:965728109200552036>":
-        pending_apps = client.get_channel(CHANNELID)
-        await pending_apps.send(embed=embed)
-    elif emoji == "<:no:965728137122050068>":
-        # move the document
+        await channel.send(embed=discord.Embed(title="", url="", description=embed.description, color=0x42ff5f))
+        await reaction.message.delete()
+        # Message user about good news
+        # Giver user role
+        content = {}
+        for item in reaction.message.embeds:
+            content["author"] = item.author
+            content["title"] = item.title
+            content["description"] = item.description
+
+            for index, item in enumerate(content["description"]):
+                if "**Discord**" == item:
+                    discord_name = content["description"][index + 1]
+                if "Discord ID" in item:
+                    discord_id = content["description"][index + 1]
+
+        content["description"] = content["description"].split("\n")
+
+        for index, item in enumerate(content["description"]):
+            if "**Discord**" == item:
+                discord_name = content["description"][index + 1]
+            if "Discord ID" in item:
+                discord_id = content["description"][index + 1]
+
+        member = guild.get_member(int(discord_id))
+        role = get(guild.roles, id=1027839390849966092)
+        await member.add_roles(role)
+        # message user
+        title = "Congratulations!\nYou've been accepted!\n"
+        msg = "Visit: [#👋・welcome](https://discord.gg/9VdHkjc5Vv)"
+        embed = discord.Embed(title=title, description=msg).set_author(
+            name="ChronoRP", icon_url="https://i.imgur.com/knLQPpi.png"
+        )
+        await member.send(embed=embed)
+    elif emoj == no:
+        # DENY
         print("NO")
-        # give client member role
+        print(reaction.message.content)
+        print(embed.description)
+        channel = client.get_channel(DENIED)
+        
+        # move the document
+        await channel.send(embed=discord.Embed(title="", url="", description=embed.description, color=0xf73b31))
+        await reaction.message.delete()
+        # Message User
+    elif emoj == pin:
+        print("PIN")
     else:
         return
 
@@ -193,7 +250,7 @@ async def on_reaction_add(reaction, user):
 async def getlastmessage(ctx, ID):
     """Get the last message of a text channel."""
     print("REQUEST")
-    channel = client.get_channel(CHANNELID)
+    channel = client.get_channel(PENDINGID)
     if channel is None:
         await ctx.send("Could not find that channel.")
         return
