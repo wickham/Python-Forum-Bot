@@ -2,8 +2,8 @@ import discord
 from discord.ext import commands
 from .. import apikeys
 
-class greetings(commands.Cog):
-    
+
+class Greetings(commands.Cog):
     def __init__(self, client):
         self.client = client
 
@@ -18,8 +18,8 @@ class greetings(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         channel = client.get_channel(apikeys.CHANNELID)
-        await channel.send("WEOLCOM")
+        await channel.send("Bender is the best! DONT TOUCH MY STUFF!")
 
 
 def setup(client):
-    client.add_cog(greetings(client))
+    client.add_cog(Greetings(client))
