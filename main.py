@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-from termios import PENDIN
 import discord
+import time, os, json, requests
 import emoji
 from discord.ext import commands
 from discord.utils import get
-from discord import Member
+from discord import Member, ui, app_commands
 from discord.ext.commands import has_permissions, MissingPermissions
 from apikeys import *
-import time, os, json, requests
+from datetime import datetime
 
 # pip install discord.py
 # pip install -U discord.py[voice]
@@ -39,8 +39,6 @@ async def on_message(message):
     msg_content = message.content.lower()
     # Bot Primary Commands
     if any(word in msg_content for word in ["!bender"]):
-
-        print(f"{msg_content}")
         if "online" in msg_content:
             await client.change_presence(status=discord.Status.online)
         elif "offline" in msg_content:
@@ -56,7 +54,6 @@ async def on_message(message):
             await message.channel.send(embed=A)
         elif "lastmessage" in msg_content:
             """Get the last message of a text channel."""
-            print("REQUEST")
             channel = client.get_channel(PENDINGID)
             if channel is None:
                 await message.channel.send("Could not find that channel.")
@@ -78,29 +75,20 @@ async def on_message(message):
         # time.sleep(5)
         await message.delete()
     elif PENDINGID == message.channel.id:
+        print("NEW APPLICATION")
         # Grab our last message content and replicate
         content = {}
-        print(message.embeds)
-        print(message.content)
         for item in message.embeds:
             content["author"] = item.author
             content["title"] = item.title
-            # print(f"Description: \n\n{item.description}")
             content["description"] = item.description
-            # for _, field in item.fields:
-            # print(f" Field {_} | {field}")
-
             content["description"] = content["description"].split("\n")
-            # print(content["description2"])
             for index, item in enumerate(content["description"]):
                 if "**Discord**" == item:
                     discord_name = content["description"][index + 1]
                 if "Discord ID" in item:
                     discord_id = content["description"][index + 1]
-        print(f"The discord name is `{discord_name}`")
         discord_obj_from_id = await client.fetch_user(discord_id)
-        print(f"The discord id is `{discord_id}`")
-        print(f"{discord_obj_from_id.display_name}")
         if discord_name.lower() == str(discord_obj_from_id).lower():
             # we have a match, proceed
             print("MATCH!")
@@ -109,42 +97,41 @@ async def on_message(message):
                 ...
                 when approved, we delete the message and move to "APPROVED APPLICATIONS" """
             guild = client.get_guild(GUILDID)
-            # print(guild.get_member(int(discord_id)))
+
             if guild.get_member(int(discord_id)):
-                # if "member" in [
-                #     y.name.lower() for y in (guild.get_member(int(discord_id)).roles)
-                # ]:
-                #     title = "DINGUS, YOURE ALREADY APPROVED!\n"
-                #     msg = "Visit: [#👋・welcome](https://discord.gg/9VdHkjc5Vv)"
-                #     messageDM = "DINGUS, YOURE ALREADY APPROVED!\nVisit: [#👋・welcome](https://discord.gg/9VdHkjc5Vv)"
-                #     embed = discord.Embed(title=title, description=msg).set_author(
-                #         name="ChronoRP", icon_url="https://i.imgur.com/knLQPpi.png"
-                #     )
-                #     user = get(client.get_all_members(), id=int(discord_id))
+                if "member" in [
+                    y.name.lower() for y in (guild.get_member(int(discord_id)).roles)
+                ]:
+                    title = "DINGUS, YOURE ALREADY APPROVED!\n"
+                    msg = "Visit: [#👋・welcome](https://discord.gg/9VdHkjc5Vv)"
+                    messageDM = "DINGUS, YOURE ALREADY APPROVED!\nVisit: [#👋・welcome](https://discord.gg/9VdHkjc5Vv)"
+                    embed = discord.Embed(title=title, description=msg).set_author(
+                        name="ChronoRP", icon_url="https://i.imgur.com/knLQPpi.png"
+                    )
+                    user = get(client.get_all_members(), id=int(discord_id))
 
-                #     if user:
-                #         await user.send(embed=embed)
-                #         await message.delete()
-                #         # found the user
-                #     else:
-                #         # Not found the user
-                #         print("User is no longer in the discord!")
-                # else:
-                print(guild.get_member(int(discord_id)).roles)
-                # They need approval or denial (the river in Egypt)
-                print("APPLYING REACTS")
+                    if user:
+                        await user.send(embed=embed)
+                        await message.delete()
+                        # found the user
+                    else:
+                        # Not found the user
+                        print("User is no longer in the discord!")
+                else:
 
-                yes = '✅'
-                no = await guild.fetch_emoji(1029677911848005632)
-                pin = await guild.fetch_emoji(1029677940801278003)
+                    # They need approval or denial (the river in Egypt)
+                    yes = await guild.fetch_emoji(emojis["yes"])
+                    no = await guild.fetch_emoji(emojis["no"])
+                    warn = await guild.fetch_emoji(emojis["warning"])
 
-                moji_list = [yes, no, pin]
-                for item in moji_list:
-                    await message.add_reaction(f"{item}")
-                # await message.add_reaction("<:white_check_mark:824906654385963018>")
-                # await message.add_reaction(emoji.emojize(":xmark:"))
+                    print("ADDING REACTIONS")
+                    moji_list = [yes, no, warn]
+                    for item in moji_list:
+                        await message.add_reaction(f"{item}")
+
             else:
-                print("BIG OL DUMMY LEFT THE DISCORD!! DM THAT PERSON!")
+
+                print("EITHER NOT IN DISCORD OR INCORRECT INFORMATION FED")
 
 
 @client.command()
@@ -157,61 +144,27 @@ async def DM(ctx, user: discord.User, *, message=None):
 @client.event
 async def on_memeber_remove(member):
     channel = client.get_channel(PENDINGID)
-    print(f"user joined! {member}")
+    # print(f"user joined! {member}")
     await channel.send("You left? What a loser!")
 
 
-# @client.command(pass_context=True)
-# async def join(ctx):
-#     if ctx.author.voice:
-#         channel = ctx.message.author.voice.channel
-#         await channel.connect()
-#     else:
-#         await ctx.send("Not in a voice channel.")
-
-
-# @client.command(pass_context=True)
-# async def leave(ctx):
-#     if ctx.voice_client:
-#         await ctx.guild.voice_client.disconnect()
-#         await ctx.send("Left the channel")
-#     else:
-#         await ctx.send("Not in a voice channel.")
 @client.event
 async def on_reaction_add(reaction, user):
     embed = reaction.message.embeds[0]
     emoj = reaction.emoji
     guild = client.get_guild(GUILDID)
-    yes = '✅'
-    no = await guild.fetch_emoji(1029677911848005632)
-    pin = await guild.fetch_emoji(1029677940801278003)
+    yes = await guild.fetch_emoji(emojis["yes"])
+    no = await guild.fetch_emoji(emojis["no"])
+    warn = await guild.fetch_emoji(emojis["warning"])
+    reverse = await guild.fetch_emoji(emojis["unoreverse"])
 
     if user == client.user:
         return
-    if emoj == yes:
-        print("YES")
-        # APPROVE
-        print(reaction.message.content)
-        print(embed.description)
-        channel = client.get_channel(APPROVEDID)
-
-        await channel.send(embed=discord.Embed(title="", url="", description=embed.description, color=0x42ff5f))
-        await reaction.message.delete()
-        # Message user about good news
-        # Giver user role
-        content = {}
-        for item in reaction.message.embeds:
-            content["author"] = item.author
-            content["title"] = item.title
-            content["description"] = item.description
-
-            for index, item in enumerate(content["description"]):
-                if "**Discord**" == item:
-                    discord_name = content["description"][index + 1]
-                if "Discord ID" in item:
-                    discord_id = content["description"][index + 1]
-
-        content["description"] = content["description"].split("\n")
+    content = {}
+    for item in reaction.message.embeds:
+        content["author"] = item.author
+        content["title"] = item.title
+        content["description"] = item.description
 
         for index, item in enumerate(content["description"]):
             if "**Discord**" == item:
@@ -219,29 +172,123 @@ async def on_reaction_add(reaction, user):
             if "Discord ID" in item:
                 discord_id = content["description"][index + 1]
 
+    content["description"] = content["description"].split("\n")
+
+    for index, item in enumerate(content["description"]):
+        if "**Discord**" == item:
+            discord_name = content["description"][index + 1]
+        if "Discord ID" in item:
+            discord_id = content["description"][index + 1]
+
+    if emoj == yes:
+        print("YES")
+        # APPROVE
+        channel = client.get_channel(APPROVEDID)
+
+        await channel.send(
+            embed=discord.Embed(
+                title="",
+                url="",
+                description=embed.description,
+                color=0x42FF5F,
+            )
+        )
+        await reaction.message.delete()
+        # Message user about good news
+        # Giver user role
+
         member = guild.get_member(int(discord_id))
-        role = get(guild.roles, id=1027839390849966092)
+        role = get(guild.roles, id=MEMBERROLE)
+        denied = get(guild.roles, id=DENIEDROLE)
+
         await member.add_roles(role)
+        for role in member.roles:
+            if role.id == DENIEDROLE:
+                print("removing denied role")
+                await member.remove_roles(denied)
         # message user
-        title = "Congratulations!\nYou've been accepted!\n"
-        msg = "Visit: [#👋・welcome](https://discord.gg/9VdHkjc5Vv)"
-        embed = discord.Embed(title=title, description=msg).set_author(
-            name="ChronoRP", icon_url="https://i.imgur.com/knLQPpi.png"
+        title = "Congratulations!\n"
+        msg = """You've been __**accepted**__\nNOW GET OUT THERE MEAT BAG AND MAKE BENDER PROUD!\n\n
+                Few Channels to Visit:\n
+                [👋・welcome](https://discord.gg/9VdHkjc5Vv)\n
+                [📜・table-of-contents](https://discord.com/channels/979545493577293824/1029181982783045646)\n
+                [✨・self-role](https://discord.com/channels/979545493577293824/1028127399583432735)\n
+                *and learn what to do next*."""
+        embed = discord.Embed(title=title, description=msg, color=0x42FF5F).set_author(
+            name="ChronoRP",
+            icon_url="https://i.imgur.com/knLQPpi.png",
         )
         await member.send(embed=embed)
     elif emoj == no:
         # DENY
-        print("NO")
-        print(reaction.message.content)
-        print(embed.description)
-        channel = client.get_channel(DENIED)
-        
-        # move the document
-        await channel.send(embed=discord.Embed(title="", url="", description=embed.description, color=0xf73b31))
+        print("DENIED")
+        channel = client.get_channel(DENIEDID)
+
+        # Move the document
+        moved = await channel.send(
+            embed=discord.Embed(
+                title="", url="", description=embed.description, color=0xF73B31
+            )
+        )
         await reaction.message.delete()
+        await moved.add_reaction(f"{reverse}")
         # Message User
-    elif emoj == pin:
-        print("PIN")
+        member = guild.get_member(int(discord_id))
+        role = get(guild.roles, id=DENIEDROLE)
+        await member.add_roles(role)
+
+        # message user
+        application = await channel.fetch_message(channel.last_message_id)
+        embed = discord.Embed(
+            description=reaction.message.embeds[0].description,
+            color=0xFFFFFF,
+        )
+        await member.send(embed=embed)
+
+        title = "Sorry.\n"
+        msg = f"""Your application was __**denied**__\nYou may be able to re-apply!\n\n
+                Review your application above to see maybe where it can be improved...\n
+                Visit the channel below if you would like to appeal or find out more.\n
+                [SUPPLY THIS DENIED URL!](https://discord.com/channels/{GUILDID}/{DENIEDID}/{application.id})\n
+                [🏰・appeal](https://discord.com/channels/979545493577293824/1029928358588465162)\n
+                """
+        embed = discord.Embed(title=title, description=msg, color=0xF73B31,).set_author(
+            name="ChronoRP",
+            icon_url="https://i.imgur.com/knLQPpi.png",
+        )
+        message = await member.send(embed=embed)
+    elif emoj == warn:
+        print("warning")
+        channel = client.get_channel(PENDINGID)
+        await reaction.message.delete()
+        message = await channel.send(
+            embed=discord.Embed(
+                title="",
+                url="",
+                description=embed.description,
+                color=0xF5D60F,
+            )
+        )
+        yes = await guild.fetch_emoji(emojis["yes"])
+        no = await guild.fetch_emoji(emojis["no"])
+        moji_list = [yes, no]
+        for item in moji_list:
+            await message.add_reaction(f"{item}")
+    elif emoj == reverse:
+        print("reversed ban")
+        channel = client.get_channel(PENDINGID)
+        await reaction.message.delete()
+        message = await channel.send(
+            embed=discord.Embed(
+                title="",
+                url="",
+                description=embed.description,
+                color=0xF5D60F,
+            )
+        )
+        moji_list = [yes, no, warn]
+        for item in moji_list:
+            await message.add_reaction(f"{item}")
     else:
         return
 
