@@ -11,6 +11,8 @@ from datetime import datetime
 
 # pip install discord.py
 # pip install -U discord.py[voice]
+# pip install requests
+# pip install emoji
 
 command_list = ["online", "offline", "dnd", "idle", "joke"]
 
@@ -27,7 +29,7 @@ async def on_ready():
         activity=discord.Activity(
             type=discord.ActivityType.listening, name="how great I am!"
         ),
-        status=discord.Status.online,
+        status=discord.Status.do_not_disturb,
     )
 
 
@@ -40,13 +42,33 @@ async def on_message(message):
     # Bot Primary Commands
     if any(word in msg_content for word in ["!bender"]):
         if "online" in msg_content:
-            await client.change_presence(status=discord.Status.online)
+            await client.change_presence(
+                activity=discord.Activity(
+                    type=discord.ActivityType.listening, name="how great I am!"
+                ),
+                status=discord.Status.online,
+            )
         elif "offline" in msg_content:
-            await client.change_presence(status=discord.Status.offline)
+            await client.change_presence(
+                activity=discord.Activity(
+                    type=discord.ActivityType.listening, name="how great I am!"
+                ),
+                status=discord.Status.offline,
+            )
         elif "dnd" in msg_content:
-            await client.change_presence(status=discord.Status.do_not_disturb)
+            await client.change_presence(
+                activity=discord.Activity(
+                    type=discord.ActivityType.listening, name="how great I am!"
+                ),
+                status=discord.Status.do_not_disturb,
+            )
         elif "idle" in msg_content:
-            await client.change_presence(status=discord.Status.idle)
+            await client.change_presence(
+                activity=discord.Activity(
+                    type=discord.ActivityType.listening, name="how great I am!"
+                ),
+                status=discord.Status.idle,
+            )
         elif "joke" in msg_content:
             Q, A = tell_joke()
             await message.channel.send(embed=Q)
